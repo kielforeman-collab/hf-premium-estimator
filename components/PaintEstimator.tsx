@@ -55,7 +55,7 @@ export default function PaintEstimator() {
   };
 
   const addMaterialItem = () => {
-    setMaterialItems([...materialItems, { id: Date.now().toString(), description: 'New Material', amount: 0 }]);
+    setMaterialItems([...materialItems, { id: Date.now().toString(), item: 'New Material', description: '', quantity: 1, amount: 0 }]);
   };
 
   const updateMaterialItem = (id: string, updates: Partial<LineItem>) => {
@@ -67,7 +67,7 @@ export default function PaintEstimator() {
   };
 
   const addLaborItem = () => {
-    setLaborItems([...laborItems, { id: Date.now().toString(), description: 'New Labor Item', amount: 0 }]);
+    setLaborItems([...laborItems, { id: Date.now().toString(), item: 'New Labor Item', description: '', quantity: 1, amount: 0 }]);
   };
 
   const updateLaborItem = (id: string, updates: Partial<LineItem>) => {
@@ -81,8 +81,8 @@ export default function PaintEstimator() {
   const handleGenerateProposal = async () => {
     setIsProposalLoading(true);
     try {
-      const materialList = materialItems.map(m => `${m.description} ($${m.amount})`).join(', ');
-      const laborList = laborItems.map(l => `${l.description} ($${l.amount})`).join(', ');
+      const materialList = materialItems.map(m => `${m.quantity}x ${m.item} ${m.description ? `(${m.description}) ` : ''}($${(m.amount * (m.quantity || 1)).toFixed(2)})`).join(', ');
+      const laborList = laborItems.map(l => `${l.quantity}x ${l.item} ${l.description ? `(${l.description}) ` : ''}($${(l.amount * (l.quantity || 1)).toFixed(2)})`).join(', ');
       const context = `
         Additional Materials: ${materialList || 'None'}
         Additional Labour: ${laborList || 'None'}
@@ -307,24 +307,49 @@ export default function PaintEstimator() {
                   </div>
                   <div className="space-y-3">
                     {materialItems.map((item) => (
-                      <div key={item.id} className="flex gap-3 items-end">
-                        <div className="flex-1 space-y-1">
+                      <div key={item.id} className="flex gap-3 items-end flex-wrap sm:flex-nowrap">
+                        <div className="w-1/3 sm:w-48 space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Item</label>
+                          <input
+                            type="text"
+                            value={item.item}
+                            onChange={(e) => updateMaterialItem(item.id, { item: e.target.value })}
+                            className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
+                          />
+                        </div>
+                        <div className="flex-1 space-y-1 min-w-[200px]">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">Description</label>
                           <input
                             type="text"
                             value={item.description}
                             onChange={(e) => updateMaterialItem(item.id, { description: e.target.value })}
+                            placeholder="Optional details..."
                             className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
                           />
                         </div>
-                        <div className="w-32 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Amount ($)</label>
+                        <div className="w-20 space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Quantity</label>
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateMaterialItem(item.id, { quantity: parseFloat(e.target.value) || 0 })}
+                            className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
+                          />
+                        </div>
+                        <div className="w-24 space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Unit ($)</label>
                           <input
                             type="number"
                             value={item.amount}
                             onChange={(e) => updateMaterialItem(item.id, { amount: parseFloat(e.target.value) || 0 })}
                             className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
                           />
+                        </div>
+                        <div className="w-24 space-y-1 hidden sm:block">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Total</label>
+                          <div className="w-full px-3 py-1 text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-100 rounded-md">
+                            ${(item.amount * (item.quantity || 1)).toFixed(2)}
+                          </div>
                         </div>
                         <button
                           onClick={() => removeMaterialItem(item.id)}
@@ -336,6 +361,14 @@ export default function PaintEstimator() {
                     ))}
                     {materialItems.length === 0 && (
                       <p className="text-xs text-slate-400 italic">No additional materials added.</p>
+                    )}
+                    {materialItems.length > 0 && (
+                      <div className="flex justify-end pt-3 mt-3 border-t border-slate-100">
+                        <div className="text-sm">
+                          <span className="text-slate-500 font-medium">Materials Subtotal: </span>
+                          <span className="font-bold text-[#0a192f]">${materialItems.reduce((acc, item) => acc + (item.amount * (item.quantity || 1)), 0).toFixed(2)}</span>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -355,24 +388,49 @@ export default function PaintEstimator() {
                   </div>
                   <div className="space-y-3">
                     {laborItems.map((item) => (
-                      <div key={item.id} className="flex gap-3 items-end">
-                        <div className="flex-1 space-y-1">
+                      <div key={item.id} className="flex gap-3 items-end flex-wrap sm:flex-nowrap">
+                        <div className="w-1/3 sm:w-48 space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Item</label>
+                          <input
+                            type="text"
+                            value={item.item}
+                            onChange={(e) => updateLaborItem(item.id, { item: e.target.value })}
+                            className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
+                          />
+                        </div>
+                        <div className="flex-1 space-y-1 min-w-[200px]">
                           <label className="text-[10px] font-bold text-slate-400 uppercase">Description</label>
                           <input
                             type="text"
                             value={item.description}
                             onChange={(e) => updateLaborItem(item.id, { description: e.target.value })}
+                            placeholder="Optional details..."
                             className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
                           />
                         </div>
-                        <div className="w-32 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Amount ($)</label>
+                        <div className="w-20 space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Quantity</label>
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateLaborItem(item.id, { quantity: parseFloat(e.target.value) || 0 })}
+                            className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
+                          />
+                        </div>
+                        <div className="w-24 space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Unit ($)</label>
                           <input
                             type="number"
                             value={item.amount}
                             onChange={(e) => updateLaborItem(item.id, { amount: parseFloat(e.target.value) || 0 })}
                             className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
                           />
+                        </div>
+                        <div className="w-24 space-y-1 hidden sm:block">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Total</label>
+                          <div className="w-full px-3 py-1 text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-100 rounded-md">
+                            ${(item.amount * (item.quantity || 1)).toFixed(2)}
+                          </div>
                         </div>
                         <button
                           onClick={() => removeLaborItem(item.id)}
@@ -384,6 +442,14 @@ export default function PaintEstimator() {
                     ))}
                     {laborItems.length === 0 && (
                       <p className="text-xs text-slate-400 italic">No additional labour items added.</p>
+                    )}
+                    {laborItems.length > 0 && (
+                      <div className="flex justify-end pt-3 mt-3 border-t border-slate-100">
+                        <div className="text-sm">
+                          <span className="text-slate-500 font-medium">Labour Subtotal: </span>
+                          <span className="font-bold text-[#0a192f]">${laborItems.reduce((acc, item) => acc + (item.amount * (item.quantity || 1)), 0).toFixed(2)}</span>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -520,8 +586,11 @@ export default function PaintEstimator() {
                       <ul className="text-sm space-y-1">
                         {materialItems.map(item => (
                           <li key={item.id} className="flex justify-between">
-                            <span>{item.description}</span>
-                            <span>${item.amount.toFixed(2)}</span>
+                            <span>
+                              <span className="font-semibold">{item.quantity}x {item.item}</span>
+                              {item.description && <span className="text-slate-500 ml-2 italic">- {item.description}</span>}
+                            </span>
+                            <span>${(item.amount * (item.quantity || 1)).toFixed(2)}</span>
                           </li>
                         ))}
                       </ul>
@@ -533,8 +602,11 @@ export default function PaintEstimator() {
                       <ul className="text-sm space-y-1">
                         {laborItems.map(item => (
                           <li key={item.id} className="flex justify-between">
-                            <span>{item.description}</span>
-                            <span>${item.amount.toFixed(2)}</span>
+                            <span>
+                              <span className="font-semibold">{item.quantity}x {item.item}</span>
+                              {item.description && <span className="text-slate-500 ml-2 italic">- {item.description}</span>}
+                            </span>
+                            <span>${(item.amount * (item.quantity || 1)).toFixed(2)}</span>
                           </li>
                         ))}
                       </ul>

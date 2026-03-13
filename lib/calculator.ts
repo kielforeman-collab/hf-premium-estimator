@@ -8,10 +8,11 @@ export interface Room {
   doors: number;
   complexity: number;
 }
-
 export interface LineItem {
   id: string;
+  item: string;
   description: string;
+  quantity: number;
   amount: number;
 }
 
@@ -51,8 +52,8 @@ export function calculateTotals(rooms: Room[], settings: PricingSettings, materi
   let laborCost = totalLaborHours * settings.laborRate;
 
   // Add custom line items
-  materialItems.forEach(item => materialCost += item.amount);
-  laborItems.forEach(item => laborCost += item.amount);
+  materialItems.forEach(item => materialCost += (item.amount * (item.quantity || 1)));
+  laborItems.forEach(item => laborCost += (item.amount * (item.quantity || 1)));
   
   const subtotal = materialCost + laborCost;
   const markupAmount = subtotal * (settings.markup / 100);
