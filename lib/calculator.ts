@@ -14,6 +14,7 @@ export interface LineItem {
   description: string;
   quantity: number;
   amount: number;
+  size?: string;
 }
 
 export interface PricingSettings {
@@ -46,11 +47,20 @@ export function calculateTotals(rooms: Room[], settings: PricingSettings, materi
   });
 
   // 1 gallon covers approx 400 sqft (2 coats)
-  const gallonsNeeded = Math.ceil(totalWallArea / 400) * 2;
-  const ehfAmount = gallonsNeeded * (settings.ehfFee || 0);
+  const baseGallons = Math.ceil(totalWallArea / 400) * 2;
+  const ehfAmount = baseGallons * (settings.ehfFee || 0);
   
   // Base costs
-  let materialCost = (gallonsNeeded * settings.paintCost) + (gallonsNeeded * 10) + ehfAmount; // +$10 for supplies per gallon
+  let materialCost = (baseGallons * settings.paintCost) + (baseGallons * 10) + ehfAmount; // +$10 for supplies per gallon
+
+  // Add custom line items paint size to estimated gallons
+  let additionalGallons = 0;
+  materialItems.forEach(item => {
+    if (item.size === 'Gallons') additionalGallons += item.quantity;
+    else if (item.size === '5Gallon') additionalGallons += item.quantity * 5;
+    else if (item.size === 'Litres') additionalGallons += item.quantity / 3.78541;
+  });
+  const gallonsNeeded = Number((baseGallons + additionalGallons).toFixed(2));
   let laborCost = totalLaborHours * settings.laborRate;
 
   // Add custom line items

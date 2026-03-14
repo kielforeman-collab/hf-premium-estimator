@@ -18,7 +18,8 @@ export default function PaintEstimator() {
   const [rooms, setRooms] = useState<Room[]>([
     { id: '1', name: 'Living Room', length: 15, width: 20, height: 8, windows: 2, doors: 1, complexity: 1 }
   ]);
-  const [materialItems, setMaterialItems] = useState<LineItem[]>([]);
+  const [paintItems, setPaintItems] = useState<LineItem[]>([]);
+  const [sundryItems, setSundryItems] = useState<LineItem[]>([]);
   const [laborItems, setLaborItems] = useState<LineItem[]>([]);
   const [settings, setSettings] = useState<PricingSettings>({
     laborRate: 70,
@@ -32,7 +33,7 @@ export default function PaintEstimator() {
   const [isProposalLoading, setIsProposalLoading] = useState(false);
   const [showProposalModal, setShowProposalModal] = useState(false);
 
-  const totals = useMemo(() => calculateTotals(rooms, settings, materialItems, laborItems), [rooms, settings, materialItems, laborItems]);
+  const totals = useMemo(() => calculateTotals(rooms, settings, [...paintItems, ...sundryItems], laborItems), [rooms, settings, paintItems, sundryItems, laborItems]);
 
   const addRoom = () => {
     const newRoom: Room = {
@@ -56,16 +57,28 @@ export default function PaintEstimator() {
     setRooms(rooms.map(r => r.id === id ? { ...r, ...updates } : r));
   };
 
-  const addMaterialItem = () => {
-    setMaterialItems([...materialItems, { id: crypto.randomUUID(), item: 'New Material', description: '', quantity: 1, amount: 0 }]);
+  const addPaintItem = () => {
+    setPaintItems([...paintItems, { id: crypto.randomUUID(), item: 'New Paint', description: '', quantity: 1, amount: 0, size: 'Gallons' }]);
   };
 
-  const updateMaterialItem = (id: string, updates: Partial<LineItem>) => {
-    setMaterialItems(materialItems.map(item => item.id === id ? { ...item, ...updates } : item));
+  const updatePaintItem = (id: string, updates: Partial<LineItem>) => {
+    setPaintItems(paintItems.map(item => item.id === id ? { ...item, ...updates } : item));
   };
 
-  const removeMaterialItem = (id: string) => {
-    setMaterialItems(materialItems.filter(item => item.id !== id));
+  const removePaintItem = (id: string) => {
+    setPaintItems(paintItems.filter(item => item.id !== id));
+  };
+
+  const addSundryItem = () => {
+    setSundryItems([...sundryItems, { id: crypto.randomUUID(), item: 'New Sundry', description: '', quantity: 1, amount: 0, size: 'Each' }]);
+  };
+
+  const updateSundryItem = (id: string, updates: Partial<LineItem>) => {
+    setSundryItems(sundryItems.map(item => item.id === id ? { ...item, ...updates } : item));
+  };
+
+  const removeSundryItem = (id: string) => {
+    setSundryItems(sundryItems.filter(item => item.id !== id));
   };
 
   const addLaborItem = () => {
@@ -83,10 +96,12 @@ export default function PaintEstimator() {
   const handleGenerateProposal = async () => {
     setIsProposalLoading(true);
     try {
-      const materialList = materialItems.map(m => `${m.quantity}x ${m.item} ${m.description ? `(${m.description}) ` : ''}($${(m.amount * (m.quantity || 1)).toFixed(2)})`).join(', ');
+      const paintList = paintItems.map(m => `${m.quantity}x ${m.size && m.size !== 'Each' ? m.size + ' ' : ''}${m.item} ${m.description ? `(${m.description}) ` : ''}($${(m.amount * (m.quantity || 1)).toFixed(2)})`).join(', ');
+      const sundryList = sundryItems.map(m => `${m.quantity}x ${m.size && m.size !== 'Each' ? m.size + ' ' : ''}${m.item} ${m.description ? `(${m.description}) ` : ''}($${(m.amount * (m.quantity || 1)).toFixed(2)})`).join(', ');
       const laborList = laborItems.map(l => `${l.quantity}x ${l.item} ${l.description ? `(${l.description}) ` : ''}($${(l.amount * (l.quantity || 1)).toFixed(2)})`).join(', ');
       const context = `
-        Additional Materials: ${materialList || 'None'}
+        Additional Paint Materials: ${paintList || 'None'}
+        Additional Sundries: ${sundryList || 'None'}
         Additional Labour: ${laborList || 'None'}
       `;
       const text = await generateAIProposal(clientName || 'Valued Customer', rooms, totals.totalWallArea, totals.finalTotal, context);
@@ -106,7 +121,8 @@ export default function PaintEstimator() {
   const handleReset = () => {
     if (confirm('Are you sure you want to reset all data?')) {
       setRooms([{ id: crypto.randomUUID(), name: 'Living Room', length: 15, width: 20, height: 8, windows: 2, doors: 1, complexity: 1 }]);
-      setMaterialItems([]);
+      setPaintItems([]);
+      setSundryItems([]);
       setLaborItems([]);
       setClientName('');
     }
@@ -303,59 +319,72 @@ export default function PaintEstimator() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-bold flex items-center gap-2 font-serif text-[#0a192f]">
-                      <Calculator className="text-[#c5a059]" size={20} /> Additional Materials
+                      <Calculator className="text-[#c5a059]" size={20} /> Additional Paint
                     </h2>
                     <button
-                      onClick={addMaterialItem}
+                      onClick={addPaintItem}
                       className="flex items-center gap-1 text-sm font-bold text-[#c5a059] hover:text-[#a6864a] transition print:hidden"
                     >
-                      <Plus size={16} /> Add Material
+                      <Plus size={16} /> Add Paint
                     </button>
                   </div>
                   <div className="space-y-3">
-                    {materialItems.map((item) => (
+                    {paintItems.map((item) => (
                       <div key={item.id} className="flex gap-3 items-end flex-wrap sm:flex-nowrap">
                         <div className="w-1/3 sm:w-48 space-y-1">
-                          <label htmlFor={`mat-item-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Item</label>
+                          <label htmlFor={`paint-item-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Item</label>
                           <input
-                            id={`mat-item-${item.id}`}
+                            id={`paint-item-${item.id}`}
                             type="text"
                             value={item.item}
-                            onChange={(e) => updateMaterialItem(item.id, { item: e.target.value })}
+                            onChange={(e) => updatePaintItem(item.id, { item: e.target.value })}
                             className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
                           />
                         </div>
-                        <div className="flex-1 space-y-1 min-w-[200px]">
-                          <label htmlFor={`mat-desc-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Description</label>
+                        <div className="flex-1 space-y-1 min-w-[150px]">
+                          <label htmlFor={`paint-desc-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Description</label>
                           <input
-                            id={`mat-desc-${item.id}`}
+                            id={`paint-desc-${item.id}`}
                             type="text"
                             value={item.description}
-                            onChange={(e) => updateMaterialItem(item.id, { description: e.target.value })}
+                            onChange={(e) => updatePaintItem(item.id, { description: e.target.value })}
                             placeholder="Optional details..."
                             className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
                           />
                         </div>
+                        <div className="w-24 space-y-1">
+                          <label htmlFor={`paint-size-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Size</label>
+                          <select
+                            id={`paint-size-${item.id}`}
+                            value={item.size || 'Gallons'}
+                            onChange={(e) => updatePaintItem(item.id, { size: e.target.value })}
+                            className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059] bg-white"
+                          >
+                            <option value="Gallons">Gallons</option>
+                            <option value="Litres">Litres</option>
+                            <option value="5Gallon">5Gallon</option>
+                          </select>
+                        </div>
                         <div className="w-20 space-y-1">
-                          <label htmlFor={`mat-qty-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Quantity</label>
+                          <label htmlFor={`paint-qty-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Quantity</label>
                           <input
-                            id={`mat-qty-${item.id}`}
+                            id={`paint-qty-${item.id}`}
                             type="number"
                             min="0"
                             value={item.quantity}
-                            onChange={(e) => updateMaterialItem(item.id, { quantity: Math.max(0, parseFloat(e.target.value) || 0) })}
+                            onChange={(e) => updatePaintItem(item.id, { quantity: Math.max(0, parseFloat(e.target.value) || 0) })}
                             className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
                           />
                         </div>
                         <div className="w-24 space-y-1">
-                          <label htmlFor={`mat-amt-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Unit ($)</label>
+                          <label htmlFor={`paint-amt-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Price ($)</label>
                           <input
-                            id={`mat-amt-${item.id}`}
+                            id={`paint-amt-${item.id}`}
                             type="number"
                             min="0"
                             step="0.01"
                             value={item.amount}
-                            onChange={(e) => updateMaterialItem(item.id, { amount: Math.max(0, parseFloat(e.target.value) || 0) })}
+                            onChange={(e) => updatePaintItem(item.id, { amount: Math.max(0, parseFloat(e.target.value) || 0) })}
                             className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
                           />
                         </div>
@@ -366,7 +395,7 @@ export default function PaintEstimator() {
                           </div>
                         </div>
                         <button
-                          onClick={() => removeMaterialItem(item.id)}
+                          onClick={() => removePaintItem(item.id)}
                           aria-label={`Remove material ${item.item}`}
                           className="p-1.5 text-slate-300 hover:text-red-500 transition print:hidden"
                         >
@@ -374,14 +403,103 @@ export default function PaintEstimator() {
                         </button>
                       </div>
                     ))}
-                    {materialItems.length === 0 && (
-                      <p className="text-xs text-slate-400 italic">No additional materials added.</p>
+                    {paintItems.length === 0 && (
+                      <p className="text-xs text-slate-400 italic">No additional paint added.</p>
                     )}
-                    {materialItems.length > 0 && (
+                    {paintItems.length > 0 && (
                       <div className="flex justify-end pt-3 mt-3 border-t border-slate-100">
                         <div className="text-sm">
-                          <span className="text-slate-500 font-medium">Materials Subtotal: </span>
-                          <span className="font-bold text-[#0a192f]">${materialItems.reduce((acc, item) => acc + (item.amount * (item.quantity || 1)), 0).toFixed(2)}</span>
+                          <span className="text-slate-500 font-medium">Paint Subtotal: </span>
+                          <span className="font-bold text-[#0a192f]">${paintItems.reduce((acc, item) => acc + (item.amount * (item.quantity || 1)), 0).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Sundries */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-bold flex items-center gap-2 font-serif text-[#0a192f]">
+                      <Calculator className="text-[#c5a059]" size={20} /> Additional Sundries
+                    </h2>
+                    <button
+                      onClick={addSundryItem}
+                      className="flex items-center gap-1 text-sm font-bold text-[#c5a059] hover:text-[#a6864a] transition print:hidden"
+                    >
+                      <Plus size={16} /> Add Sundry
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {sundryItems.map((item) => (
+                      <div key={item.id} className="flex gap-3 items-end flex-wrap sm:flex-nowrap">
+                        <div className="w-1/3 sm:w-48 space-y-1">
+                          <label htmlFor={`sundry-item-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Item</label>
+                          <input
+                            id={`sundry-item-${item.id}`}
+                            type="text"
+                            value={item.item}
+                            onChange={(e) => updateSundryItem(item.id, { item: e.target.value })}
+                            className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
+                          />
+                        </div>
+                        <div className="flex-1 space-y-1 min-w-[200px]">
+                          <label htmlFor={`sundry-desc-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Description</label>
+                          <input
+                            id={`sundry-desc-${item.id}`}
+                            type="text"
+                            value={item.description}
+                            onChange={(e) => updateSundryItem(item.id, { description: e.target.value })}
+                            placeholder="Optional details..."
+                            className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
+                          />
+                        </div>
+                        <div className="w-20 space-y-1">
+                          <label htmlFor={`sundry-qty-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Quantity</label>
+                          <input
+                            id={`sundry-qty-${item.id}`}
+                            type="number"
+                            min="0"
+                            value={item.quantity}
+                            onChange={(e) => updateSundryItem(item.id, { quantity: Math.max(0, parseFloat(e.target.value) || 0) })}
+                            className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
+                          />
+                        </div>
+                        <div className="w-24 space-y-1">
+                          <label htmlFor={`sundry-amt-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Price ($)</label>
+                          <input
+                            id={`sundry-amt-${item.id}`}
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={item.amount}
+                            onChange={(e) => updateSundryItem(item.id, { amount: Math.max(0, parseFloat(e.target.value) || 0) })}
+                            className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
+                          />
+                        </div>
+                        <div className="w-24 space-y-1 hidden sm:block">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Total</label>
+                          <div className="w-full px-3 py-1 text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-100 rounded-md">
+                            ${(item.amount * (item.quantity || 1)).toFixed(2)}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeSundryItem(item.id)}
+                          aria-label={`Remove material ${item.item}`}
+                          className="p-1.5 text-slate-300 hover:text-red-500 transition print:hidden"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    {sundryItems.length === 0 && (
+                      <p className="text-xs text-slate-400 italic">No additional sundries added.</p>
+                    )}
+                    {sundryItems.length > 0 && (
+                      <div className="flex justify-end pt-3 mt-3 border-t border-slate-100">
+                        <div className="text-sm">
+                          <span className="text-slate-500 font-medium">Sundries Subtotal: </span>
+                          <span className="font-bold text-[#0a192f]">${sundryItems.reduce((acc, item) => acc + (item.amount * (item.quantity || 1)), 0).toFixed(2)}</span>
                         </div>
                       </div>
                     )}
@@ -437,7 +555,7 @@ export default function PaintEstimator() {
                           />
                         </div>
                         <div className="w-24 space-y-1">
-                          <label htmlFor={`lab-amt-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Unit ($)</label>
+                          <label htmlFor={`lab-amt-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Price ($)</label>
                           <input
                             id={`lab-amt-${item.id}`}
                             type="number"
@@ -611,22 +729,42 @@ export default function PaintEstimator() {
               </table>
 
               {/* Line Items in Print */}
-              {(materialItems.length > 0 || laborItems.length > 0) && (
+              {((paintItems.length > 0 || sundryItems.length > 0) || laborItems.length > 0) && (
                 <div className="grid grid-cols-2 gap-8">
-                  {materialItems.length > 0 && (
+                  {(paintItems.length > 0 || sundryItems.length > 0) && (
                     <div>
-                      <h4 className="text-xs font-bold uppercase text-slate-400 mb-2">Additional Materials</h4>
-                      <ul className="text-sm space-y-1">
-                        {materialItems.map(item => (
-                          <li key={item.id} className="flex justify-between">
-                            <span>
-                              <span className="font-semibold">{item.quantity}x {item.item}</span>
-                              {item.description && <span className="text-slate-500 ml-2 italic">- {item.description}</span>}
-                            </span>
-                            <span>${(item.amount * (item.quantity || 1)).toFixed(2)}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      {paintItems.length > 0 && (
+                        <div className="mb-4">
+                          <h4 className="text-xs font-bold uppercase text-slate-400 mb-2">Additional Paint</h4>
+                          <ul className="text-sm space-y-1">
+                            {paintItems.map(item => (
+                              <li key={item.id} className="flex justify-between">
+                                <span>
+                                  <span className="font-semibold">{item.quantity}x {item.size && item.size !== 'Each' ? item.size + ' ' : ''}{item.item}</span>
+                                  {item.description && <span className="text-slate-500 ml-2 italic">- {item.description}</span>}
+                                </span>
+                                <span>${(item.amount * (item.quantity || 1)).toFixed(2)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {sundryItems.length > 0 && (
+                        <div>
+                          <h4 className="text-xs font-bold uppercase text-slate-400 mb-2">Additional Sundries</h4>
+                          <ul className="text-sm space-y-1">
+                            {sundryItems.map(item => (
+                              <li key={item.id} className="flex justify-between">
+                                <span>
+                                  <span className="font-semibold">{item.quantity}x {item.size && item.size !== 'Each' ? item.size + ' ' : ''}{item.item}</span>
+                                  {item.description && <span className="text-slate-500 ml-2 italic">- {item.description}</span>}
+                                </span>
+                                <span>${(item.amount * (item.quantity || 1)).toFixed(2)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
                   {laborItems.length > 0 && (
@@ -656,7 +794,7 @@ export default function PaintEstimator() {
                   </div>
                   {totals.ehfAmount > 0 && (
                     <div className="flex justify-between text-sm text-slate-400 -mt-2">
-                      <span className="text-xs pl-2">↳ Includes BC EHF:</span>
+                      <span className="text-xs pl-2">â†³ Includes BC EHF:</span>
                       <span className="text-xs">${totals.ehfAmount.toFixed(2)}</span>
                     </div>
                   )}
