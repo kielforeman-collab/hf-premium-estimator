@@ -100,9 +100,9 @@ export default function PaintEstimator() {
       const sundryList = sundryItems.map(m => `${m.quantity}x ${m.size && m.size !== 'Each' ? m.size + ' ' : ''}${m.item} ${m.description ? `(${m.description}) ` : ''}($${(m.amount * (m.quantity || 1)).toFixed(2)})`).join(', ');
       const laborList = laborItems.map(l => `${l.quantity}x ${l.item} ${l.description ? `(${l.description}) ` : ''}($${(l.amount * (l.quantity || 1)).toFixed(2)})`).join(', ');
       const context = `
-        Additional Paint Materials: ${paintList || 'None'}
-        Additional Sundries: ${sundryList || 'None'}
-        Additional Labour: ${laborList || 'None'}
+        Paint Materials: ${paintList || 'None'}
+        Sundries: ${sundryList || 'None'}
+        Labour: ${laborList || 'None'}
       `;
       const text = await generateAIProposal(clientName || 'Valued Customer', rooms, totals.totalWallArea, totals.finalTotal, context);
       setProposal(text || '');
@@ -319,7 +319,7 @@ export default function PaintEstimator() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-bold flex items-center gap-2 font-serif text-[#0a192f]">
-                      <Calculator className="text-[#c5a059]" size={20} /> Additional Paint
+                      <Calculator className="text-[#c5a059]" size={20} /> Paint
                     </h2>
                     <button
                       onClick={addPaintItem}
@@ -421,7 +421,7 @@ export default function PaintEstimator() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-bold flex items-center gap-2 font-serif text-[#0a192f]">
-                      <Calculator className="text-[#c5a059]" size={20} /> Additional Sundries
+                      <Calculator className="text-[#c5a059]" size={20} /> Sundries
                     </h2>
                     <button
                       onClick={addSundryItem}
@@ -510,7 +510,7 @@ export default function PaintEstimator() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-bold flex items-center gap-2 font-serif text-[#0a192f]">
-                      <Calculator className="text-[#c5a059]" size={20} /> Additional Labour
+                      <Calculator className="text-[#c5a059]" size={20} /> Labour
                     </h2>
                     <button
                       onClick={addLaborItem}
@@ -735,7 +735,7 @@ export default function PaintEstimator() {
                     <div>
                       {paintItems.length > 0 && (
                         <div className="mb-4">
-                          <h4 className="text-xs font-bold uppercase text-slate-400 mb-2">Additional Paint</h4>
+                          <h4 className="text-xs font-bold uppercase text-slate-400 mb-2">Paint</h4>
                           <ul className="text-sm space-y-1">
                             {paintItems.map(item => (
                               <li key={item.id} className="flex justify-between">
@@ -751,7 +751,7 @@ export default function PaintEstimator() {
                       )}
                       {sundryItems.length > 0 && (
                         <div>
-                          <h4 className="text-xs font-bold uppercase text-slate-400 mb-2">Additional Sundries</h4>
+                          <h4 className="text-xs font-bold uppercase text-slate-400 mb-2">Sundries</h4>
                           <ul className="text-sm space-y-1">
                             {sundryItems.map(item => (
                               <li key={item.id} className="flex justify-between">
@@ -769,7 +769,7 @@ export default function PaintEstimator() {
                   )}
                   {laborItems.length > 0 && (
                     <div>
-                      <h4 className="text-xs font-bold uppercase text-slate-400 mb-2">Additional Labour</h4>
+                      <h4 className="text-xs font-bold uppercase text-slate-400 mb-2">Labour</h4>
                       <ul className="text-sm space-y-1">
                         {laborItems.map(item => (
                           <li key={item.id} className="flex justify-between">
