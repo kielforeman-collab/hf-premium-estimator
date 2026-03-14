@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useId } from 'react';
 import Image from 'next/image';
 import { Plus, Trash2, Calculator, FileText, Printer, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -14,6 +14,7 @@ export default function PaintEstimator() {
   useEffect(() => {
     setQuoteId(`QT-${Date.now().toString().slice(-6)}`);
   }, []);
+  const formId = useId();
   const [rooms, setRooms] = useState<Room[]>([
     { id: '1', name: 'Living Room', length: 15, width: 20, height: 8, windows: 2, doors: 1, complexity: 1 }
   ]);
@@ -30,11 +31,11 @@ export default function PaintEstimator() {
   const [isProposalLoading, setIsProposalLoading] = useState(false);
   const [showProposalModal, setShowProposalModal] = useState(false);
 
-  const totals = calculateTotals(rooms, settings, materialItems, laborItems);
+  const totals = useMemo(() => calculateTotals(rooms, settings, materialItems, laborItems), [rooms, settings, materialItems, laborItems]);
 
   const addRoom = () => {
     const newRoom: Room = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       name: 'New Area',
       length: 12,
       width: 12,
@@ -55,7 +56,7 @@ export default function PaintEstimator() {
   };
 
   const addMaterialItem = () => {
-    setMaterialItems([...materialItems, { id: Date.now().toString(), item: 'New Material', description: '', quantity: 1, amount: 0 }]);
+    setMaterialItems([...materialItems, { id: crypto.randomUUID(), item: 'New Material', description: '', quantity: 1, amount: 0 }]);
   };
 
   const updateMaterialItem = (id: string, updates: Partial<LineItem>) => {
@@ -67,7 +68,7 @@ export default function PaintEstimator() {
   };
 
   const addLaborItem = () => {
-    setLaborItems([...laborItems, { id: Date.now().toString(), item: 'New Labor Item', description: '', quantity: 1, amount: 0 }]);
+    setLaborItems([...laborItems, { id: crypto.randomUUID(), item: 'New Labor Item', description: '', quantity: 1, amount: 0 }]);
   };
 
   const updateLaborItem = (id: string, updates: Partial<LineItem>) => {
@@ -103,7 +104,7 @@ export default function PaintEstimator() {
 
   const handleReset = () => {
     if (confirm('Are you sure you want to reset all data?')) {
-      setRooms([{ id: '1', name: 'Living Room', length: 15, width: 20, height: 8, windows: 2, doors: 1, complexity: 1 }]);
+      setRooms([{ id: crypto.randomUUID(), name: 'Living Room', length: 15, width: 20, height: 8, windows: 2, doors: 1, complexity: 1 }]);
       setMaterialItems([]);
       setLaborItems([]);
       setClientName('');
@@ -187,8 +188,9 @@ export default function PaintEstimator() {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Client Name</label>
+                  <label htmlFor={`${formId}-client`} className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Client Name</label>
                   <input
+                    id={`${formId}-client`}
                     type="text"
                     value={clientName}
                     onChange={(e) => setClientName(e.target.value)}
@@ -197,8 +199,9 @@ export default function PaintEstimator() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Quote Number</label>
+                  <label htmlFor={`${formId}-quote`} className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Quote Number</label>
                   <input
+                    id={`${formId}-quote`}
                     type="text"
                     value={quoteId}
                     onChange={(e) => setQuoteId(e.target.value)}
@@ -234,6 +237,7 @@ export default function PaintEstimator() {
                     >
                       <button
                         onClick={() => removeRoom(room.id)}
+                        aria-label="Remove room"
                         className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition print:hidden"
                       >
                         <Trash2 size={18} />
@@ -241,8 +245,9 @@ export default function PaintEstimator() {
 
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                         <div className="md:col-span-2">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Room Name</label>
+                          <label htmlFor={`room-name-${room.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Room Name</label>
                           <input
+                            id={`room-name-${room.id}`}
                             type="text"
                             value={room.name}
                             onChange={(e) => updateRoom(room.id, { name: e.target.value })}
@@ -250,8 +255,9 @@ export default function PaintEstimator() {
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Complexity</label>
+                          <label htmlFor={`room-comp-${room.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Complexity</label>
                           <select
+                            id={`room-comp-${room.id}`}
                             value={room.complexity}
                             onChange={(e) => updateRoom(room.id, { complexity: parseFloat(e.target.value) })}
                             className="w-full bg-white px-2 py-1 text-sm border border-slate-200 rounded-md outline-none"
@@ -309,8 +315,9 @@ export default function PaintEstimator() {
                     {materialItems.map((item) => (
                       <div key={item.id} className="flex gap-3 items-end flex-wrap sm:flex-nowrap">
                         <div className="w-1/3 sm:w-48 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Item</label>
+                          <label htmlFor={`mat-item-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Item</label>
                           <input
+                            id={`mat-item-${item.id}`}
                             type="text"
                             value={item.item}
                             onChange={(e) => updateMaterialItem(item.id, { item: e.target.value })}
@@ -318,8 +325,9 @@ export default function PaintEstimator() {
                           />
                         </div>
                         <div className="flex-1 space-y-1 min-w-[200px]">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Description</label>
+                          <label htmlFor={`mat-desc-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Description</label>
                           <input
+                            id={`mat-desc-${item.id}`}
                             type="text"
                             value={item.description}
                             onChange={(e) => updateMaterialItem(item.id, { description: e.target.value })}
@@ -328,20 +336,25 @@ export default function PaintEstimator() {
                           />
                         </div>
                         <div className="w-20 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Quantity</label>
+                          <label htmlFor={`mat-qty-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Quantity</label>
                           <input
+                            id={`mat-qty-${item.id}`}
                             type="number"
+                            min="0"
                             value={item.quantity}
-                            onChange={(e) => updateMaterialItem(item.id, { quantity: parseFloat(e.target.value) || 0 })}
+                            onChange={(e) => updateMaterialItem(item.id, { quantity: Math.max(0, parseFloat(e.target.value) || 0) })}
                             className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
                           />
                         </div>
                         <div className="w-24 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Unit ($)</label>
+                          <label htmlFor={`mat-amt-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Unit ($)</label>
                           <input
+                            id={`mat-amt-${item.id}`}
                             type="number"
+                            min="0"
+                            step="0.01"
                             value={item.amount}
-                            onChange={(e) => updateMaterialItem(item.id, { amount: parseFloat(e.target.value) || 0 })}
+                            onChange={(e) => updateMaterialItem(item.id, { amount: Math.max(0, parseFloat(e.target.value) || 0) })}
                             className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
                           />
                         </div>
@@ -353,6 +366,7 @@ export default function PaintEstimator() {
                         </div>
                         <button
                           onClick={() => removeMaterialItem(item.id)}
+                          aria-label={`Remove material ${item.item}`}
                           className="p-1.5 text-slate-300 hover:text-red-500 transition print:hidden"
                         >
                           <Trash2 size={16} />
@@ -390,8 +404,9 @@ export default function PaintEstimator() {
                     {laborItems.map((item) => (
                       <div key={item.id} className="flex gap-3 items-end flex-wrap sm:flex-nowrap">
                         <div className="w-1/3 sm:w-48 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Item</label>
+                          <label htmlFor={`lab-item-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Item</label>
                           <input
+                            id={`lab-item-${item.id}`}
                             type="text"
                             value={item.item}
                             onChange={(e) => updateLaborItem(item.id, { item: e.target.value })}
@@ -399,8 +414,9 @@ export default function PaintEstimator() {
                           />
                         </div>
                         <div className="flex-1 space-y-1 min-w-[200px]">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Description</label>
+                          <label htmlFor={`lab-desc-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Description</label>
                           <input
+                            id={`lab-desc-${item.id}`}
                             type="text"
                             value={item.description}
                             onChange={(e) => updateLaborItem(item.id, { description: e.target.value })}
@@ -409,20 +425,25 @@ export default function PaintEstimator() {
                           />
                         </div>
                         <div className="w-20 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Quantity</label>
+                          <label htmlFor={`lab-qty-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Quantity</label>
                           <input
+                            id={`lab-qty-${item.id}`}
                             type="number"
+                            min="0"
                             value={item.quantity}
-                            onChange={(e) => updateLaborItem(item.id, { quantity: parseFloat(e.target.value) || 0 })}
+                            onChange={(e) => updateLaborItem(item.id, { quantity: Math.max(0, parseFloat(e.target.value) || 0) })}
                             className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
                           />
                         </div>
                         <div className="w-24 space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase">Unit ($)</label>
+                          <label htmlFor={`lab-amt-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Unit ($)</label>
                           <input
+                            id={`lab-amt-${item.id}`}
                             type="number"
+                            min="0"
+                            step="0.01"
                             value={item.amount}
-                            onChange={(e) => updateLaborItem(item.id, { amount: parseFloat(e.target.value) || 0 })}
+                            onChange={(e) => updateLaborItem(item.id, { amount: Math.max(0, parseFloat(e.target.value) || 0) })}
                             className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059]"
                           />
                         </div>
@@ -434,6 +455,7 @@ export default function PaintEstimator() {
                         </div>
                         <button
                           onClick={() => removeLaborItem(item.id)}
+                          aria-label={`Remove labour item ${item.item}`}
                           className="p-1.5 text-slate-300 hover:text-red-500 transition print:hidden"
                         >
                           <Trash2 size={16} />
@@ -469,11 +491,14 @@ export default function PaintEstimator() {
                   { label: 'Tax Rate (%)', key: 'taxRate' },
                 ].map((field) => (
                   <div key={field.key} className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{field.label}</label>
+                    <label htmlFor={`setting-${field.key}`} className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{field.label}</label>
                     <input
+                      id={`setting-${field.key}`}
                       type="number"
+                      min="0"
+                      step={field.key === 'markup' || field.key === 'taxRate' ? '0.1' : '1'}
                       value={settings[field.key as keyof PricingSettings]}
-                      onChange={(e) => setSettings({ ...settings, [field.key]: parseFloat(e.target.value) || 0 })}
+                      onChange={(e) => setSettings({ ...settings, [field.key]: Math.max(0, parseFloat(e.target.value) || 0) })}
                       className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#c5a059] outline-none transition"
                     />
                   </div>
@@ -643,7 +668,12 @@ export default function PaintEstimator() {
       {/* Proposal Modal */}
       <AnimatePresence>
         {showProposalModal && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="proposal-title"
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -651,10 +681,14 @@ export default function PaintEstimator() {
               className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
             >
               <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2 font-serif">
+                <h3 id="proposal-title" className="text-xl font-bold text-slate-800 flex items-center gap-2 font-serif">
                   <FileText className="text-[#c5a059]" size={20} /> AI Project Proposal
                 </h3>
-                <button onClick={() => setShowProposalModal(false)} className="text-slate-400 hover:text-slate-600 transition">
+                <button 
+                  onClick={() => setShowProposalModal(false)}
+                  aria-label="Close proposal modal"
+                  className="text-slate-400 hover:text-slate-600 transition"
+                >
                   <Plus className="rotate-45" size={24} />
                 </button>
               </div>
