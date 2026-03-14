@@ -20,8 +20,8 @@ export default function PaintEstimator() {
   const [materialItems, setMaterialItems] = useState<LineItem[]>([]);
   const [laborItems, setLaborItems] = useState<LineItem[]>([]);
   const [settings, setSettings] = useState<PricingSettings>({
-    laborRate: 75,
-    paintCost: 65,
+    laborRate: 70,
+    paintCost: 95,
     markup: 20,
     taxRate: 13
   });
@@ -463,7 +463,7 @@ export default function PaintEstimator() {
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { label: 'Labor Rate ($/hr)', key: 'laborRate' },
+                  { label: 'Labour Rate ($/hr)', key: 'laborRate' },
                   { label: 'Paint Cost ($/gal)', key: 'paintCost' },
                   { label: 'Markup (%)', key: 'markup' },
                   { label: 'Tax Rate (%)', key: 'taxRate' },
