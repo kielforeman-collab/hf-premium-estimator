@@ -21,6 +21,7 @@ export interface PricingSettings {
   paintCost: number;
   markup: number;
   taxRate: number;
+  ehfFee: number;
 }
 
 export function calculateRoomArea(room: Room) {
@@ -46,9 +47,10 @@ export function calculateTotals(rooms: Room[], settings: PricingSettings, materi
 
   // 1 gallon covers approx 400 sqft (2 coats)
   const gallonsNeeded = Math.ceil(totalWallArea / 400) * 2;
+  const ehfAmount = gallonsNeeded * (settings.ehfFee || 0);
   
   // Base costs
-  let materialCost = (gallonsNeeded * settings.paintCost) + (gallonsNeeded * 10); // +$10 for supplies per gallon
+  let materialCost = (gallonsNeeded * settings.paintCost) + (gallonsNeeded * 10) + ehfAmount; // +$10 for supplies per gallon
   let laborCost = totalLaborHours * settings.laborRate;
 
   // Add custom line items
@@ -64,6 +66,7 @@ export function calculateTotals(rooms: Room[], settings: PricingSettings, materi
   return {
     totalWallArea,
     gallonsNeeded,
+    ehfAmount,
     materialCost,
     laborCost,
     subtotal,

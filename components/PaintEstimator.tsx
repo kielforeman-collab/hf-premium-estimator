@@ -24,7 +24,8 @@ export default function PaintEstimator() {
     laborRate: 70,
     paintCost: 95,
     markup: 20,
-    taxRate: 13
+    taxRate: 13,
+    ehfFee: 1.00
   });
 
   const [proposal, setProposal] = useState('');
@@ -483,10 +484,11 @@ export default function PaintEstimator() {
               <h2 className="text-lg font-bold mb-6 flex items-center gap-2 font-serif text-[#0a192f]">
                 <Calculator className="text-[#c5a059]" size={20} /> Pricing Settings
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 {[
                   { label: 'Labour Rate ($/hr)', key: 'laborRate' },
                   { label: 'Paint Cost ($/gal)', key: 'paintCost' },
+                  { label: 'BC EHF ($/gal)', key: 'ehfFee' },
                   { label: 'Markup (%)', key: 'markup' },
                   { label: 'Tax Rate (%)', key: 'taxRate' },
                 ].map((field) => (
@@ -496,7 +498,7 @@ export default function PaintEstimator() {
                       id={`setting-${field.key}`}
                       type="number"
                       min="0"
-                      step={field.key === 'markup' || field.key === 'taxRate' ? '0.1' : '1'}
+                      step={field.key === 'markup' || field.key === 'taxRate' ? '0.1' : field.key === 'ehfFee' ? '0.01' : '1'}
                       value={settings[field.key as keyof PricingSettings]}
                       onChange={(e) => setSettings({ ...settings, [field.key]: Math.max(0, parseFloat(e.target.value) || 0) })}
                       className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#c5a059] outline-none transition"
@@ -524,6 +526,12 @@ export default function PaintEstimator() {
                   <span className="text-sm">Estimated Paint</span>
                   <span className="font-bold text-slate-900">{totals.gallonsNeeded} gal</span>
                 </div>
+                {totals.ehfAmount > 0 && (
+                  <div className="flex justify-between text-slate-500">
+                    <span className="text-xs">BC EHF Included</span>
+                    <span className="text-xs font-semibold">${totals.ehfAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 <hr className="border-slate-100" />
 
                 <div className="space-y-2">
@@ -646,6 +654,12 @@ export default function PaintEstimator() {
                     <span className="text-slate-500">Materials Total:</span>
                     <span className="font-semibold">${totals.materialCost.toFixed(2)}</span>
                   </div>
+                  {totals.ehfAmount > 0 && (
+                    <div className="flex justify-between text-sm text-slate-400 -mt-2">
+                      <span className="text-xs pl-2">↳ Includes BC EHF:</span>
+                      <span className="text-xs">${totals.ehfAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Labour Services:</span>
                     <span className="font-semibold">${totals.laborCost.toFixed(2)}</span>
