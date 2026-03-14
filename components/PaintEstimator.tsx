@@ -356,13 +356,13 @@ export default function PaintEstimator() {
                           <label htmlFor={`paint-size-${item.id}`} className="text-[10px] font-bold text-slate-400 uppercase">Size</label>
                           <select
                             id={`paint-size-${item.id}`}
-                            value={item.size || 'Gallons'}
+                            value={item.size || 'Gallon'}
                             onChange={(e) => updatePaintItem(item.id, { size: e.target.value })}
                             className="w-full px-3 py-1 text-sm border border-slate-200 rounded-md outline-none focus:border-[#c5a059] bg-white"
                           >
-                            <option value="Gallons">Gallons</option>
-                            <option value="Litres">Litres</option>
-                            <option value="5Gallon">5Gallon</option>
+                            <option value="Gallon">Gallon</option>
+                            <option value="Litre">Litre</option>
+                            <option value="5 Gallon">5 Gallon</option>
                           </select>
                         </div>
                         <div className="w-20 space-y-1">
@@ -820,7 +820,7 @@ export default function PaintEstimator() {
       {/* Proposal Modal */}
       <AnimatePresence>
         {showProposalModal && (
-          <div 
+          <div
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             role="dialog"
             aria-modal="true"
@@ -836,7 +836,7 @@ export default function PaintEstimator() {
                 <h3 id="proposal-title" className="text-xl font-bold text-slate-800 flex items-center gap-2 font-serif">
                   <FileText className="text-[#c5a059]" size={20} /> AI Project Proposal
                 </h3>
-                <button 
+                <button
                   onClick={() => setShowProposalModal(false)}
                   aria-label="Close proposal modal"
                   className="text-slate-400 hover:text-slate-600 transition"
